@@ -4,9 +4,9 @@ The output: If the connection exceeds a given threshold then it will cause the t
 In computer science:
 create 'networks' on a computer using matrix.
 ## Elements of a Neural Network:
-__Input Layer__: The layer accepts input features.
-__Hidden Layer__: Nodes of the layers are not exposed to the outer world. It performs all sort of __computation on the features__ entered through the input layer and __transfer the result__ to the output layer.
-__Output Layer__: The layer bring up the information learned by the network to the outer world.
+__Input Layer__: The layer accepts input features.  
+__Hidden Layer__: Nodes of the layers are not exposed to the outer world. It performs all sort of __computation on the features__ entered through the input layer and __transfer the result__ to the output layer.  
+__Output Layer__: The layer bring up the information learned by the network to the outer world.  
 
 
 ## The training process consists of the following steps:
@@ -22,23 +22,24 @@ Calculate the error i.e the difference between the actual output and the expecte
 Weight += Error Input Output (1-Output) ,here Output (1-Output) is derivative of sigmoid curve.
 
 ## Activation Function:
-Activation function decides, whether a neuron should be activated or not by calculating weighted sum and further adding bias with it.
+Activation function decides, whether a neuron should be activated or not by calculating weighted sum and further adding bias with it.  
 The purpose of the AF(activation function) is to introduce non-linearity into the output of a neuron. If a neural network without activation function is essentially just a linear regression model.
+
 2). __Sigmoid Function__ :
 It is a function which is plotted as ‘S’ shaped graph.
-Equation : A = 1/(1 + exp(-x))
-Nature : Non-linear. Notice that X values lies between -2 to 2, Y values are very steep. This means, small changes in x would also bring about large changes in the value of Y.
-Value Range : 0 to 1
-Uses : Usually used in output layer of a binary classification, where result is either 0 or 1, as value for sigmoid function lies between 0 and 1 only so, result can be predicted easily to be 1 if value is greater than 0.5 and 0 otherwise.
+- Equation : A = 1/(1 + exp(-x))
+- Nature : Non-linear. Notice that X values lies between -2 to 2, Y values are very steep. This means, small changes in x would also bring about large changes in the value of Y.
+- Value Range : 0 to 1
+- Uses : Usually used in output layer of a binary classification, where result is either 0 or 1, as value for sigmoid function lies between 0 and 1 only so, result can be predicted easily to be 1 if value is greater than 0.5 and 0 otherwise.
 
 3). __Tanh Function__ :- The activation that works almost always __better than sigmoid function__ is Tanh function also knows as Tangent Hyperbolic function. It’s actually mathematically shifted version of the sigmoid function. Both are similar and can be derived from each other.
 Equation:
 
         f(x) = tanh(x) = 2/(1 + e-2x) - 1
         OR tanh(x) = 2 * sigmoid(2x) - 1
-Value Range: -1 to +1
-Nature : non-linear
-Uses : Usually used in hidden layers of a neural network as it’s values lies between -1 to 1 hence the mean for the hidden layer comes out be 0 or very close to it, hence helps in centering the data by bringing mean close to 0. This makes learning for the next layer much easier.
+- Value Range: -1 to +1
+- Nature : non-linear
+- Uses : Usually used in hidden layers of a neural network as it’s values lies between -1 to 1 hence the mean for the hidden layer comes out be 0 or very close to it, hence helps in centering the data by bringing mean close to 0. This makes learning for the next layer much easier.
 
 4). __RELU__ : Stands for Rectified linear unit. It is the most widely used activation function. Chiefly implemented in hidden layers of Neural network.
 
