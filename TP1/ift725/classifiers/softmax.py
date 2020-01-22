@@ -44,6 +44,11 @@ def softmax_naive_loss_function(W, X, y, reg):
     #############################################################################
     loss = loss*0
     dW = dW*0
+    #SM = 0
+    for i, (r,c) in enumerate(zip(X, y)):
+        dM = dM + np.array(r) * W[:, i] - c
+
+    loss = -np.log(dM) + reg * np.array(W, W.transpose)
 
     #############################################################################
     #                         FIN DE VOTRE CODE                                 #
