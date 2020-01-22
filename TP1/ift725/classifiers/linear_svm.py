@@ -32,6 +32,8 @@ def svm_naive_loss_function(W, X, y, reg):
     #  exemple dans les notes de cours).  La loss ainsi que le gradient doivent #
     #  être par la suite moyennés.  Et, à la fin, n'oubliez pas d'ajouter le    #
     #  terme de régularisation L2 : reg*||w||^2                                 #
+    # TODO: Calculate dW and loss.  The loss and gradient must be subsequently averaged.
+    # And at the end, don't forget to add the regularization term L2: reg*||w||^2
     #############################################################################
 
     #############################################################################
@@ -54,6 +56,8 @@ def svm_vectorized_loss_function(W, X, y, reg):
     # TODO: Implémentez une version vectorisée de la fonction de perte SVM.     #
     # Veuillez mettre le résultat dans la variable "loss".                      #
     # NOTE : Cette fonction ne doit contenir aucune boucle                      #
+    # TODO: Please put the result in the variable "loss".  NOTE: This function must not contain any loop
+    #   Implement a vectorized version of the SVM loss function.
     #############################################################################
     loss = 0.0
 
@@ -68,7 +72,10 @@ def svm_vectorized_loss_function(W, X, y, reg):
     #                                                                           #
     # Indice: Au lieu de calculer le gradient à partir de zéro, il peut être    #
     # plus facile de réutiliser certaines des valeurs intermédiaires que vous   #
-    # avez utilisées pour calculer la perte.                                    #
+    # avez utilisées pour calculer la perte.
+    #
+    # TODO: Index: Instead of calculating the gradient from zero, it may be easier to
+    #  reuse some of the intermediate values that you used to calculate the loss.                                 #
     #############################################################################
 
     dW = dW*0

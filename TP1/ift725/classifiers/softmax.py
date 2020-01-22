@@ -37,6 +37,10 @@ def softmax_naive_loss_function(W, X, y, reg):
     # N'oubliez pas la régularisation! Afin d'éviter toute instabilité          #
     # numérique, soustrayez le score maximum de la classe de tous les scores    #
     # d'un échantillon.                                                         #
+    # TODO: Calculate the average softmax loss(Cross entropy) and its average gradient with loops
+    # on each pair(X[i], y[i]). The cross-entropy for a pair (X[i], y[i]) is -log(SM[y[i]]),
+    # where SM is the 10-class softmax vector of X[i] for the gradient, you can use equation 4.109.
+    # To avoid numerical instability, substract the maximum class score from all scores in a sample.
     #############################################################################
     loss = loss*0
     dW = dW*0
@@ -73,7 +77,8 @@ def softmax_vectorized_loss_function(W, X, y, reg):
     # Stockez la perte dans la variable "loss" et le gradient dans "dW".        #
     # N'oubliez pas la régularisation! Afin d'éviter toute instabilité          #
     # numérique, soustrayez le score maximum de la classe de tous les scores    #
-    # d'un échantillon.                                                         #
+    # d'un échantillon.
+    # TODO: To avoid numerical instability, subtract the maximum class score from all scores in a sample.                                                         #
     #############################################################################
     loss = loss * 0
     dW = dW * 0
