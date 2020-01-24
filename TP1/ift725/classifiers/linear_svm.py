@@ -35,6 +35,16 @@ def svm_naive_loss_function(W, X, y, reg):
     # TODO: Calculate dW and loss.  The loss and gradient must be subsequently averaged.
     # And at the end, don't forget to add the regularization term L2: reg*||w||^2
     #############################################################################
+    delta = 1
+    for i in range(X.shape[0]):
+        y_predict = np.dot(X[i, :], W)
+        sum_loss = 0
+        for j in range(W.shape[1]):
+            if j != y[i]:
+                score = y_predict[j] - y_predict[y[i]] + delta
+                loss += score if score > 0 else 0
+
+    loss = loss/X.shape[0] + 0.5 * reg * np.sum(W*W)
 
     #############################################################################
     #                            FIN DE VOTRE CODE                              #
@@ -60,6 +70,9 @@ def svm_vectorized_loss_function(W, X, y, reg):
     #   Implement a vectorized version of the SVM loss function.
     #############################################################################
     loss = 0.0
+    y_predict = X.dot(W)
+    score = np.maximum(0, y_predict)
+
 
     #############################################################################
     #                            FIN DE VOTRE CODE                              #

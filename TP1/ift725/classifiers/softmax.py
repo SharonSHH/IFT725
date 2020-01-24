@@ -44,11 +44,12 @@ def softmax_naive_loss_function(W, X, y, reg):
     #############################################################################
     loss = loss*0
     dW = dW*0
-    #SM = 0
-    for i, (r,c) in enumerate(zip(X, y)):
-        dM = dM + np.array(r) * W[:, i] - c
+    for i in range(X.shape[0]):
+        score = np.dot(X[i], W)
+        base_sum = np.sum(np.exp(score))
+        loss += -score[y[i]] + np.log(base_sum)
 
-    loss = -np.log(dM) + reg * np.array(W, W.transpose)
+    loss = loss/X.shape[0] + 0.5*reg*np.sum(W*W)
 
     #############################################################################
     #                         FIN DE VOTRE CODE                                 #
@@ -87,10 +88,10 @@ def softmax_vectorized_loss_function(W, X, y, reg):
     #############################################################################
     loss = loss * 0
     dW = dW * 0
-    result = np.dot(W, X)
+    result = np.dot(X, W)
     score = np.exp(result)/np.sum(np.exp(result))
     W_norm = np.dot(W, W.transpose())
-    loss = -np.log(score) + reg * W_norm
+    loss = -np.log(score) + 0.5* reg * W_norm
 
     dW = np.dot(score, X) + 2*reg*np.array(W)
 
