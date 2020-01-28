@@ -32,20 +32,30 @@ def svm_naive_loss_function(W, X, y, reg):
     #  exemple dans les notes de cours).  La loss ainsi que le gradient doivent #
     #  être par la suite moyennés.  Et, à la fin, n'oubliez pas d'ajouter le    #
     #  terme de régularisation L2 : reg*||w||^2                                 #
-    # TODO: Calculate dW and loss.  The loss and gradient must be subsequently averaged.
-    # And at the end, don't forget to add the regularization term L2: reg*||w||^2
     #############################################################################
     delta = 1
-    for i in range(X.shape[0]):
-        y_predict = np.dot(X[i, :], W)
-        sum_loss = 0
-        for j in range(W.shape[1]):
-            if j != y[i]:
-                score = y_predict[j] - y_predict[y[i]] + delta
-                loss += score if score > 0 else 0
+    num_train = X.shape[0]
+    num_class = W.shape[1]
+    for i in range(num_train):
+        scores = np.dot(X[i], W)
+        count_loss = 0
+        for j in range(num_class):
+            if j == y[i]:
+                continue
+            margin = scores[j] - scores[y[i]] + delta
+            if margin > 0:
+                loss += margin
+                dW[:, j] += X[i]
+                count_loss += 1
+        dW[:, y[i]] += (-1) * count_loss * X[i]
 
-    loss = loss/X.shape[0] + 0.5 * reg * np.sum(W*W)
+    # calculate the average loss and gradient
+    loss /= num_train
+    dW /= num_train
 
+    # Add regularization term L2:reg*||w||^2 to the loss and gradient
+    loss += reg * np.sum(W * W)
+    dW += 2 * reg * W
     #############################################################################
     #                            FIN DE VOTRE CODE                              #
     #############################################################################
@@ -66,14 +76,17 @@ def svm_vectorized_loss_function(W, X, y, reg):
     # TODO: Implémentez une version vectorisée de la fonction de perte SVM.     #
     # Veuillez mettre le résultat dans la variable "loss".                      #
     # NOTE : Cette fonction ne doit contenir aucune boucle                      #
-    # TODO: Please put the result in the variable "loss".  NOTE: This function must not contain any loop
-    #   Implement a vectorized version of the SVM loss function.
     #############################################################################
-    loss = 0.0
-    y_predict = X.dot(W)
-    score = np.maximum(0, y_predict)
+    num_train = X.shape[0]
+    scores = X.dot(W)
+    delta = np.ones(scores.shape)
+    correct_class_score = scores[range(num_train), y].reshape(num_train, 1)
+    margin = np.maximum(0, scores - correct_class_score + delta)
 
-
+    # Do not consider correct class in loss
+    margin[range(num_train), y] = 0
+    loss = np.sum(margin)/num_train
+    loss += reg * np.sum(W * W)
     #############################################################################
     #                            FIN DE VOTRE CODE                              #
     #############################################################################
@@ -85,14 +98,13 @@ def svm_vectorized_loss_function(W, X, y, reg):
     #                                                                           #
     # Indice: Au lieu de calculer le gradient à partir de zéro, il peut être    #
     # plus facile de réutiliser certaines des valeurs intermédiaires que vous   #
-    # avez utilisées pour calculer la perte.
-    #
-    # TODO: Index: Instead of calculating the gradient from zero, it may be easier to
-    #  reuse some of the intermediate values that you used to calculate the loss.                                 #
+    # avez utilisées pour calculer la perte.                                    #
     #############################################################################
-
     dW = dW*0
-
+    margin[margin > 0] = 1
+    margin_count = np.sum(margin, axis=1)
+    margin[range(X.shape[0]), y] -= margin_count
+    dW = X.T.dot(margin)/num_train + 2 * reg * W
     #############################################################################
     #                            FIN DE VOTRE CODE                              #
     #############################################################################
