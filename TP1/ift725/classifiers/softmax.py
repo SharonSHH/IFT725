@@ -37,20 +37,26 @@ def softmax_naive_loss_function(W, X, y, reg):
     # N'oubliez pas la régularisation! Afin d'éviter toute instabilité          #
     # numérique, soustrayez le score maximum de la classe de tous les scores    #
     # d'un échantillon.                                                         #
-    # TODO: Calculate the average softmax loss(Cross entropy) and its average gradient with loops
-    # on each pair(X[i], y[i]). The cross-entropy for a pair (X[i], y[i]) is -log(SM[y[i]]),
-    # where SM is the 10-class softmax vector of X[i] for the gradient, you can use equation 4.109.
-    # To avoid numerical instability, substract the maximum class score from all scores in a sample.
     #############################################################################
     loss = loss*0
     dW = dW*0
-    for i in range(X.shape[0]):
-        score = np.dot(X[i], W)
-        base_sum = np.sum(np.exp(score))
-        loss += -score[y[i]] + np.log(base_sum)
+    num_train = X.shape[0]
+    num_class = W.shape[1]
+    for i in range(num_train):
+        scores = X[i].dot(W)
+        f = scores - np.max(scores)
+        probability = np.exp(f)/np.sum(np.exp(f))
+        loss -= np.log(probability[y[i]])
+        # Calculate gradient
+        for j in range(num_class):
+            dW[:, j] += X[i] * probability[j]
+        dW[:, y[i]] -= X[i]
 
-    loss = loss/X.shape[0] + 0.5*reg*np.sum(W*W)
+    loss /= num_train
+    dW /= num_train
 
+    loss += reg * np.sum(W*W)
+    dW += 2 * reg * W
     #############################################################################
     #                         FIN DE VOTRE CODE                                 #
     #############################################################################
@@ -83,19 +89,24 @@ def softmax_vectorized_loss_function(W, X, y, reg):
     # Stockez la perte dans la variable "loss" et le gradient dans "dW".        #
     # N'oubliez pas la régularisation! Afin d'éviter toute instabilité          #
     # numérique, soustrayez le score maximum de la classe de tous les scores    #
-    # d'un échantillon.
-    # TODO: To avoid numerical instability, subtract the maximum class score from all scores in a sample.                                                         #
+    # d'un échantillon.                                                         #
     #############################################################################
     loss = loss * 0
     dW = dW * 0
-    result = np.dot(X, W)
-    score = np.exp(result)/np.sum(np.exp(result))
-    W_norm = np.dot(W, W.transpose())
-    loss = -np.log(score) + 0.5* reg * W_norm
+    num_train = X.shape[0]
+    scores = X.dot(W)
+    f = scores - np.max(scores, axis=1, keepdims=True)
+    probability = np.exp(f)/np.exp(f).sum(axis=1, keepdims=True)
+    # softmax loss is the negative log of probability of correct class
+    loss = np.sum(-np.log(probability[range(num_train), y]))
+    probability[range(num_train), y] -= 1
+    dW = X.T.dot(probability)
 
-    dW = np.dot(score, X) + 2*reg*np.array(W)
+    loss /= num_train
+    dW /= num_train
 
-
+    loss += reg * np.sum(W * W)
+    dW += 2 * reg * W
     #############################################################################
     #                         FIN DE VOTRE CODE                                 #
     #############################################################################
