@@ -54,10 +54,10 @@ class LinearClassifier(object):
             # Indice: Utilisez np.random.choice pour générer les indices.           #
             # L'échantillonnage avec remplacement est plus rapide que               #
             # l'échantillonnage sans remplacement.                                  #
-            # TODO: Sampling 'batch_size' elements from training data and labels to use in this
-            #gradient descent step. X_batch have the form(batch_size, dim), y_batch: (batch_size,)
             #########################################################################
-
+            indices = np.random.choice(num_train, batch_size, replace=False)
+            X_batch = X[indices]
+            y_batch = y[indices]
             #########################################################################
             #                      FIN DE VOTRE CODE                                #
             #########################################################################
@@ -70,9 +70,8 @@ class LinearClassifier(object):
             #########################################################################
             # TODO: Mise à jour des poids en utilisant le gradient et la vitesse    #
             #  d'apprentissagethe weights using the gradient and the learning rate. #
-            # TODO: Weights update using the gradient and the learning speed.
             #########################################################################
-
+            self.W += - learning_rate * grad
             #########################################################################
             #                      FIN DE VOTRE CODE                                #
             #########################################################################
@@ -91,7 +90,7 @@ class LinearClassifier(object):
         - X: (N, D) array of training data. Each column is a D-dimensional point.
 
         Returns:
-        - y_pred: Predicted labels for the data in X. y_pred is a 1-dimensional
+        - labels_pred: Predicted labels for the data in X. labels_pred is a 1-dimensional
           array of length N, and each element is an integer giving the predicted
           class.
         """
@@ -99,9 +98,9 @@ class LinearClassifier(object):
         ###########################################################################
         # TODO: Implémentez cette fonction.                                       #
         # Stockez les étiquettes prédites dans "labels_pred".                     #
-        # TODO: Stock the predicted labels in 'labels_pred'.
         ###########################################################################
-
+        scores = X.dot(self.W)
+        labels_pred = scores.argmax(axis=1)
         ###########################################################################
         #                          FIN DE VOTRE CODE                              #
         ###########################################################################

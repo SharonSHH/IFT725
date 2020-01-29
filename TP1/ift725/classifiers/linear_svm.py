@@ -85,7 +85,7 @@ def svm_vectorized_loss_function(W, X, y, reg):
 
     # Do not consider correct class in loss
     margin[range(num_train), y] = 0
-    loss = np.sum(margin)/num_train
+    loss = margin.sum()/num_train
     loss += reg * np.sum(W * W)
     #############################################################################
     #                            FIN DE VOTRE CODE                              #
@@ -102,7 +102,7 @@ def svm_vectorized_loss_function(W, X, y, reg):
     #############################################################################
     dW = dW*0
     margin[margin > 0] = 1
-    margin_count = np.sum(margin, axis=1)
+    margin_count = margin.sum(axis=1)
     margin[range(X.shape[0]), y] -= margin_count
     dW = X.T.dot(margin)/num_train + 2 * reg * W
     #############################################################################
