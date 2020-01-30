@@ -49,7 +49,7 @@ def softmax_naive_loss_function(W, X, y, reg):
         loss -= np.log(probability[y[i]])
         # Calculate gradient
         for j in range(num_class):
-            dW[:, j] += X[i] * probability[j]
+            dW[:, j] += probability[j] * X[i]
         dW[:, y[i]] -= X[i]
 
     loss /= num_train
@@ -98,7 +98,8 @@ def softmax_vectorized_loss_function(W, X, y, reg):
     f = scores - np.max(scores, axis=1, keepdims=True)
     probability = np.exp(f)/np.exp(f).sum(axis=1, keepdims=True)
     # softmax loss is the negative log of probability of correct class
-    loss = np.sum(-np.log(probability[range(num_train), y]))
+    correct_class = probability[range(num_train), y]
+    loss = np.sum(-np.log(correct_class))
     probability[range(num_train), y] -= 1
     dW = X.T.dot(probability)
 
