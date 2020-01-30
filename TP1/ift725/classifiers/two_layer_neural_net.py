@@ -81,8 +81,9 @@ class TwoLayerNeuralNet(object):
         # Stocker le résultat dans la variable "scores", qui devrait être un        #
         # tableau de la forme (N, C).                                               #
         #############################################################################
-
-        #scores = ...
+        fc = X.dot(Weights1) + biases1  # full connected
+        X_mid = np.max(0, fc)  # ReLU activation function
+        scores = X_mid.dot(Weights2) + biases2
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
@@ -102,7 +103,11 @@ class TwoLayerNeuralNet(object):
         # NOTE : votre code doit être linéarisé et donc ne contenir AUCUNE boucle   #
         #############################################################################
         loss = loss*0
-
+        scores -= np.max(scores, axis=1, keepdims=True)
+        probability = np.exp(scores)/np.exp(scores).sum(axis=1, keepdims=True)
+        loss = np.sum(-np.log(probability[range(N), y]))
+        loss /= N
+        loss += reg * (np.sum(Weights1 * Weights1) + np.sum(Weights2 * Weights2))
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
@@ -236,7 +241,7 @@ class TwoLayerNeuralNet(object):
         # Indice : vous pouvez appeler des fonctions déjà codées...               #
         ###########################################################################
 
-
+        
         ###########################################################################
         #                             FIN DE VOTRE CODE                           #
         ###########################################################################
