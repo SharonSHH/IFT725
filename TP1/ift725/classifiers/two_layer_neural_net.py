@@ -127,8 +127,11 @@ class TwoLayerNeuralNet(object):
         #   f   class scores (N, C)
         #   f1  pre-activation of the 1st layer (N, H)
         #   a1  activation of the 1st layer (N, H)
-
-
+        probability[range(N), y] -= 1
+        dW2 = X_mid.T.dot(probability)
+        db2 = probability.sum()
+        dW1 = X.T.dot(dW2)
+        db1 = dW2.sum()
         grads['W1'] = 0
         grads['W2'] = 0
         grads['b1'] = 0
@@ -177,7 +180,9 @@ class TwoLayerNeuralNet(object):
             #  d'entrainement.                                                      #
             # Stockez-les dans "data_batch" and "labels_batch" respectivement.      #
             #########################################################################
-
+            indices = np.random.choice(num_train, batch_size)
+            data_batch = X[indices]
+            labels_batch = y[indices]
             #########################################################################
             #                            FIN DE VOTRE CODE                          #
             #########################################################################
@@ -193,8 +198,8 @@ class TwoLayerNeuralNet(object):
             # Vous aurez besoin d'utiliser les gradients stockés dans le            #
             # dictionnaire "grads" défini précédemment.                             #
             #########################################################################
-
-
+            for key in self.params:
+                self.params[key] -= learning_rate * grads[key]
             #########################################################################
             #                            FIN DE VOTRE CODE                          #
             #########################################################################
@@ -240,8 +245,7 @@ class TwoLayerNeuralNet(object):
         # TODO: Implémentez cette fonction; elle devrait être TRÈS simple!        #
         # Indice : vous pouvez appeler des fonctions déjà codées...               #
         ###########################################################################
-
-
+        y_pred = np.argmax(self.loss(X), axis=1)
         ###########################################################################
         #                             FIN DE VOTRE CODE                           #
         ###########################################################################
