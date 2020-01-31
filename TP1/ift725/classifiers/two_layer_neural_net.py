@@ -82,7 +82,7 @@ class TwoLayerNeuralNet(object):
         # tableau de la forme (N, C).                                               #
         #############################################################################
         f1 = X.dot(Weights1) + biases1  # full connected (N,H)
-        a1 = np.max(0, f1)  # ReLU activation function
+        a1 = np.maximum(0, f1)  # ReLU activation function
         scores = a1.dot(Weights2) + biases2  # full connected (N,C)
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
@@ -102,7 +102,6 @@ class TwoLayerNeuralNet(object):
         # résultat dans la variable "loss", qui doit être une valeur scalaire.      #
         # NOTE : votre code doit être linéarisé et donc ne contenir AUCUNE boucle   #
         #############################################################################
-        loss = loss*0
         scores -= np.max(scores, axis=1, keepdims=True)
         probability = np.exp(scores)/np.exp(scores).sum(axis=1, keepdims=True)
         loss = np.sum(-np.log(probability[range(N), y]))
@@ -132,13 +131,13 @@ class TwoLayerNeuralNet(object):
         probability /= N  # Average over batch
         dW2 = a1.T.dot(probability)
         grads['W2'] = dW2 + 2 * reg * Weights2
-        grads['b2'] = probability.sum()
+        grads['b2'] = probability.sum(axis=0)
 
         #dW1 = (Si-delta)*W2*X
-        dW1 = probability.T.dot(Weights2.T)
+        dW1 = probability.dot(Weights2.T)
         da1 = dW1 * (f1 > 0)
         grads['W1'] = X.T.dot(da1) + 2 * reg * Weights1
-        grads['b1'] = da1.sum()
+        grads['b1'] = da1.sum(axis=0)
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
