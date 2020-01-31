@@ -81,9 +81,9 @@ class TwoLayerNeuralNet(object):
         # Stocker le résultat dans la variable "scores", qui devrait être un        #
         # tableau de la forme (N, C).                                               #
         #############################################################################
-        fc = X.dot(Weights1) + biases1  # full connected
-        X_mid = np.max(0, fc)  # ReLU activation function
-        scores = X_mid.dot(Weights2) + biases2
+        f1 = X.dot(Weights1) + biases1  # full connected (N,H)
+        a1 = np.max(0, f1)  # ReLU activation function
+        scores = a1.dot(Weights2) + biases2  # full connected (N,C)
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
@@ -127,15 +127,18 @@ class TwoLayerNeuralNet(object):
         #   f   class scores (N, C)
         #   f1  pre-activation of the 1st layer (N, H)
         #   a1  activation of the 1st layer (N, H)
+        # W1:(D,H), W2:(H,C), X:(N,D), X_mid:(N,H)
         probability[range(N), y] -= 1
-        dW2 = X_mid.T.dot(probability)
-        db2 = probability.sum()
-        dW1 = X.T.dot(dW2)
-        db1 = dW2.sum()
-        grads['W1'] = 0
-        grads['W2'] = 0
-        grads['b1'] = 0
-        grads['b2'] = 0
+        probability /= N  # Average over batch
+        dW2 = a1.T.dot(probability)
+        grads['W2'] = dW2 + 2 * reg * Weights2
+        grads['b2'] = probability.sum()
+
+        #dW1 = (Si-delta)*W2*X
+        dW1 = probability.T.dot(Weights2.T)
+        da1 = dW1 * (f1 > 0)
+        grads['W1'] = X.T.dot(da1) + 2 * reg * Weights1
+        grads['b1'] = da1.sum()
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
