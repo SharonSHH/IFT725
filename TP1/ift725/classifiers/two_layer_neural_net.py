@@ -106,7 +106,8 @@ class TwoLayerNeuralNet(object):
         probability = np.exp(scores)/np.exp(scores).sum(axis=1, keepdims=True)
         loss = np.sum(-np.log(probability[range(N), y]))
         loss /= N
-        loss += reg * (np.sum(Weights1 * Weights1) + np.sum(Weights2 * Weights2))
+        loss += reg * (np.sum(Weights1 * Weights1) + np.sum(Weights2 * Weights2) + 
+        	np.sum(biases1 * biases1) + np.sum(biases2 * biases2))
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
@@ -131,13 +132,13 @@ class TwoLayerNeuralNet(object):
         probability /= N  # Average over batch
         dW2 = a1.T.dot(probability)
         grads['W2'] = dW2 + 2 * reg * Weights2
-        grads['b2'] = probability.sum(axis=0)
+        grads['b2'] = probability.sum(axis=0) + 2 * reg * biases2
 
         #dW1 = (Si-delta)*W2*X
         dW1 = probability.dot(Weights2.T)
         da1 = dW1 * (f1 > 0)
         grads['W1'] = X.T.dot(da1) + 2 * reg * Weights1
-        grads['b1'] = da1.sum(axis=0)
+        grads['b1'] = da1.sum(axis=0) + 2 * reg * biases1
         #############################################################################
         #                             FIN DE VOTRE CODE                             #
         #############################################################################
@@ -246,7 +247,9 @@ class TwoLayerNeuralNet(object):
         ###########################################################################
         # TODO: Implémentez cette fonction; elle devrait être TRÈS simple!        #
         # Indice : vous pouvez appeler des fonctions déjà codées...               #
+        ##np.random.choice
         ###########################################################################
+
         y_pred = np.argmax(self.loss(X), axis=1)
         ###########################################################################
         #                             FIN DE VOTRE CODE                           #
