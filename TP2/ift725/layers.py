@@ -560,11 +560,14 @@ def svm_loss(x, y):
     - dx: Gradient of the loss with respect to x
     """
     N = x.shape[0]
+    loss = 0
     #############################################################################
     # TODO: La perte SVM (ou Hinge Loss) en vous inspirant du tp1 mais sans     #
     #       régularisation                                                      #
     #############################################################################
-
+    margins = np.maximum(0, x - x[np.arange(N), y][:, np.newaxis] + 1.0)
+    margins[np.arange(N), y] = 0
+    loss = margins.sum() / N
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################
@@ -596,12 +599,13 @@ def softmax_loss(x, y, scale=1.0):
     # TODO: La perte softmax en vous inspirant du tp1 mais sans régularisation  #
     #                                                                           #
     #############################################################################
-
-
+    N = x.shape[0]
+    probs = np.exp(x - np.max(x, axis=1, keepdims=True))
+    probs /= np.sum(probs, axis=1, keepdims=True)
+    loss = -np.sum(np.log(probs[np.arange(N), y])) / N
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################
-
     dx = probs.copy()
     dx[np.arange(N), y] -= 1
     dx /= N
