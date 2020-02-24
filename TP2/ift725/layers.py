@@ -34,7 +34,10 @@ def forward_fully_connected(x, w, b):
     #  Stockez le résultat dans out.                                            #
     # Vous devrez reformer les entrées en lignes.                               #
     #############################################################################
-
+    N = x.shape[0]
+    D = np.prod(x.shape[1:])
+    X = np.reshape(x, (N, D))
+    out = X.dot(w) + b
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################
@@ -68,7 +71,12 @@ def backward_fully_connected(dout, cache):
     # TODO: Implémentez la rétropropagation pour une couche pleinement          #
     #  connectée.                                                               #
     #############################################################################
-
+    N = x.shape[0]
+    dx = dout.dot(w.T)
+    dx = dx.reshape(x.shape)
+    X = np.reshape(x, (N, -1))
+    dw = dout.T.dot(X).T
+    db = np.sum(dout, axis=0)
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################
@@ -90,7 +98,7 @@ def forward_relu(x):
     #############################################################################
     # TODO: Implémentez la propagation pour une couche ReLU.                    #
     #############################################################################
-
+    out = np.maximum(0, x)
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################
@@ -113,7 +121,7 @@ def backward_relu(dout, cache):
     #############################################################################
     # TODO: Implémentez la rétropropagation pour une couche ReLU.               #
     #############################################################################
-
+    dx = (cache > 0) * dout
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################
@@ -320,6 +328,10 @@ def forward_inverted_dropout(x, dropout_param):
     # NOTE : le dropout "normal" impose qu'en mode test, la sortie soit       #
     #        multipliée par `p`.  Le dropout inversé divise la sortie par `p` #
     #        en mode 'train'.  https://deepnotes.io/dropout
+    # TODO: implement forward propagation for the reverse dropout training phase.
+    # store dropout mask--mask.
+    # Note: the normal dropout requires that in the test mode, the output be multiplied
+    # by 'p'. The reverse dropout divides the output by 'p' in 'train' mode.
     ###########################################################################
     if mode == 'train':
         cache = None
