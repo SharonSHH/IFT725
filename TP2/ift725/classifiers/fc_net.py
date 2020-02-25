@@ -93,7 +93,12 @@ class TwoLayerNeuralNet(object):
         #  deux couches.                                                           #
         #  NOTES: score est la sortie du réseau *SANS SOFTMAX*                     #
         ############################################################################
-
+        W1 = self.params['W1']
+        W2 = self.params['W2']
+        b1 = self.params['b1']
+        b2 = self.params['b2']
+        out, relu_cache = forward_fully_connected_transform_relu(X, W1, b1)
+        scores, cache = forward_fully_connected_transform_relu(out, W2, b2)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -125,6 +130,17 @@ class TwoLayerNeuralNet(object):
         # Note, les gradients doivent être stochez dans le dictionnaire `grads`    #
         #       du type grads['W1']=...                                            #
         ############################################################################
+        # compute loss for the two fully connected NN
+        loss, gradient = softmax_loss(scores, y)
+        loss += self.reg * (np.sum(W1 * W1) + np.sum(b1 * b1) +
+                            np.sum(W2 * W2) + np.sum(b2 * b2))
+        # Calculate gradient
+        dx2, dw2, db2 = backward_fully_connected_transform_relu(gradient, cache)
+        dx, dw, db = backward_fully_connected_transform_relu(dx2, relu_cache)
+        grads['W2'] = dw2 + 2 * self.reg * W2
+        grads['b2'] = db2 + 2 * self.reg * b2
+        grads['W1'] = dw + 2 * self.reg * W1
+        grads['b1'] = db + 2 * self.reg * b1
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
