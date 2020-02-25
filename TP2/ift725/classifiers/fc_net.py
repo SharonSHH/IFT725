@@ -54,8 +54,10 @@ class TwoLayerNeuralNet(object):
         # self.params['b1'] = ...                                                  #
         # ...                                                                      #
         ############################################################################
-
-
+        self.params['W1'] = weight_scale * np.random.randn(input_dim, hidden_dim)
+        self.params['b1'] = np.zeros(hidden_dim)
+        self.params['W2'] = weight_scale * np.random.randn(hidden_dim, num_classes)
+        self.params['b2'] = np.zeros(num_classes)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
