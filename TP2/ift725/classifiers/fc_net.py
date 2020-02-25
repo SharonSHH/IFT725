@@ -216,7 +216,16 @@ class FullyConnectedNeuralNet(object):
         #           self.params[param_name_W] = ...                                #
         #           self.params[param_name_b] = ...                                #
         ############################################################################
-
+        layer = 1
+        param_name_W = self.pn('W', layer)
+        param_name_b = self.pn('b', layer)
+        self.params[param_name_W] = weight_scale * np.random.randn(input_dim, hidden_dims)
+        self.params[param_name_b] = np.zeros(hidden_dims)
+        layer += 1
+        param_name_W = self.pn('W', layer)
+        param_name_b = self.pn('b', layer)
+        self.params[param_name_W] = weight_scale * np.random.randn(hidden_dims, num_classes)
+        self.params[param_name_b] = np.zeros(num_classes)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -277,7 +286,8 @@ class FullyConnectedNeuralNet(object):
         # normalisation par lots; passer self.bn_params[1] pour la propagation de  #
         # la deuxième couche de normalisation par lots, etc.                       #
         ############################################################################
-
+        out, relu_cache = forward_fully_connected_transform_relu(X, self.params['W1'], self.params['b1'])
+        scores, cache = forward_fully_connected(out, self.params['W2'], self.params['b2'])
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -302,9 +312,13 @@ class FullyConnectedNeuralNet(object):
         # régularisation L2 inclus un facteur de 0.5 pour simplifier l'expression  #
         # pour le gradient.                                                        #
         ############################################################################
+        loss, gradient = softmax_loss(scores, y)
+        dx2, grads['W2'], grads['b2'] = backward_fully_connected(gradient, cache)
+        dx, grads['W1'], grads['b1'] = backward_fully_connected_transform_relu(dx2, relu_cache)
 
+        loss += 0.5 * self.reg * np.sum(np.square(self.params['W1']) + np.square(self.params['b1']) +
+                                        np.square(self.params['W2']) + np.square(self.params['b2']))
         ############################################################################
-        #                             FIN DE VOTRE CODE                            #
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
 
