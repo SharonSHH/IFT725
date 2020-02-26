@@ -5,6 +5,7 @@ import numpy as np
 
 from ift725.layers import *
 from ift725.layer_combo import *
+import numpy as np
 
 
 class TwoLayerNeuralNet(object):
@@ -216,16 +217,19 @@ class FullyConnectedNeuralNet(object):
         #           self.params[param_name_W] = ...                                #
         #           self.params[param_name_b] = ...                                #
         ############################################################################
-        layer = 1
-        param_name_W = self.pn('W', layer)
-        param_name_b = self.pn('b', layer)
-        self.params[param_name_W] = weight_scale * np.random.randn(input_dim, hidden_dims)
-        self.params[param_name_b] = np.zeros(hidden_dims)
+        layer_dim = [input_dim] + hidden_dims
+        for layer in range(self.num_layers - 1):
+            param_name_W = self.pn('W', layer+1)
+            param_name_b = self.pn('b', layer+1)
+            # using batch norm, store value to gamma and beta variables
+            if self.use_batchnorm:
+                self.params[self.pn('gamma', layer+1)] = np.ones(layer_dim[layer+1])
+                self.params[self.pn('beta', layer+1)] = np.zeros(layer_dim[layer+1])
+            self.params[param_name_W] = weight_scale * np.random.randn(layer_dim[layer], layer_dim[layer+1])
+            self.params[param_name_b] = np.zeros(layer_dim[layer+1])
         layer += 1
-        param_name_W = self.pn('W', layer)
-        param_name_b = self.pn('b', layer)
-        self.params[param_name_W] = weight_scale * np.random.randn(hidden_dims, num_classes)
-        self.params[param_name_b] = np.zeros(num_classes)
+        self.params[self.pn('W', layer+1)] = weight_scale * np.random.randn(layer_dim[-1], num_classes)
+        self.params[self.pn('b', layer+1)] = np.zeros(num_classes)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -286,8 +290,21 @@ class FullyConnectedNeuralNet(object):
         # normalisation par lots; passer self.bn_params[1] pour la propagation de  #
         # la deuxième couche de normalisation par lots, etc.                       #
         ############################################################################
-        out, relu_cache = forward_fully_connected_transform_relu(X, self.params['W1'], self.params['b1'])
-        scores, cache = forward_fully_connected(out, self.params['W2'], self.params['b2'])
+        caches = []
+        for i in range(self.num_layers - 1):
+            w = self.params['W'+str(i+1)]
+            b = self.params['b'+str(i+1)]
+            if self.use_batchnorm:
+                gamma = self.params['gamma'+str(i+1)]
+                beta = self.params['beta'+str(i+1)]
+                bn_params = self.bn_params[i]
+            x, cache = forward_fully_connected_norm_relu(x, w, b, gamma, beta, bn_params,
+                         self.use_batchnorm, self.use_dropout, self.dropout_param)
+            caches.append(cache)
+        w = self.params['W'+str(self.num_layers)]
+        b = self.params['b' + str(self.num_layers)]
+        scores, cache = forward_fully_connected(x, w, b)
+        caches.append(cache)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -314,10 +331,14 @@ class FullyConnectedNeuralNet(object):
         ############################################################################
         loss, gradient = softmax_loss(scores, y)
         dx2, grads['W2'], grads['b2'] = backward_fully_connected(gradient, cache)
-        dx, grads['W1'], grads['b1'] = backward_fully_connected_transform_relu(dx2, relu_cache)
+        dx, grads['W1'], grads['b1'] = backward_fully_connected_transform_relu(dx2, caches[self.num_layers-1])
 
         loss += 0.5 * self.reg * np.sum(np.square(self.params['W1']) + np.square(self.params['b1']) +
                                         np.square(self.params['W2']) + np.square(self.params['b2']))
+        grads['W2'] += self.reg * self.params['W2']
+        grads['b2'] += self.reg * self.params['b2']
+        grads['W1'] += self.reg * self.params['W1']
+        grads['b1'] += self.reg * self.params['b1']
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -326,3 +347,13 @@ class FullyConnectedNeuralNet(object):
 
     def pn(self, name, i):
         return name + str(i if i != -1 else self.num_layers)
+
+def forward_fully_connected_norm_relu(x, w, b, gamma, beta, bn_params,
+                         use_batchnorm=False, use_dropout=False, dropout_param=None):
+    out, cache = forward_fully_connected(x, w, b)
+    if use_batchnorm:
+        out, bn_cache = forward_batch_normalization(out, gamma, beta, bn_params)
+    out, relu_cache = forward_relu(out)
+    if use_dropout:
+       out, dropout_cache = forward_inverted_dropout(out, dropout_param)
+    return out, (cache, bn_cache, relu_cache, dropout_cache)
