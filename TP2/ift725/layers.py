@@ -328,13 +328,11 @@ def forward_inverted_dropout(x, dropout_param):
     # NOTE : le dropout "normal" impose qu'en mode test, la sortie soit       #
     #        multipliée par `p`.  Le dropout inversé divise la sortie par `p` #
     #        en mode 'train'.  https://deepnotes.io/dropout
-    # TODO: implement forward propagation for the reverse dropout training phase.
-    # store dropout mask--mask.
-    # Note: the normal dropout requires that in the test mode, the output be multiplied
-    # by 'p'. The reverse dropout divides the output by 'p' in 'train' mode.
     ###########################################################################
     if mode == 'train':
         cache = None
+        mask = np.random.binomial(1, p, size=x.shape) / p
+        out = x * mask
     elif mode == 'test':
         cache = None
 
@@ -363,6 +361,7 @@ def backward_inverted_dropout(dout, cache):
     ###########################################################################
     if mode == 'train':
         dx = None
+        dx = dout * mask
     elif mode == 'test':
         dx = dout
 

@@ -228,8 +228,9 @@ class FullyConnectedNeuralNet(object):
             self.params[param_name_W] = weight_scale * np.random.randn(layer_dim[layer], layer_dim[layer+1])
             self.params[param_name_b] = np.zeros(layer_dim[layer+1])
         layer += 1
-        self.params[self.pn('W', layer+1)] = weight_scale * np.random.randn(layer_dim[-1], num_classes)
-        self.params[self.pn('b', layer+1)] = np.zeros(num_classes)
+        # TODO: here is -1 or layer+1
+        self.params[self.pn('W', -1)] = weight_scale * np.random.randn(layer_dim[-1], num_classes)
+        self.params[self.pn('b', -1)] = np.zeros(num_classes)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -292,18 +293,25 @@ class FullyConnectedNeuralNet(object):
         ############################################################################
         caches = []
         for i in range(self.num_layers - 1):
-            w = self.params['W'+str(i+1)]
-            b = self.params['b'+str(i+1)]
+            w = self.params[self.pn('W', i+1)]
+            b = self.params[self.pn('b', i+1)]
+            # using batch normalization
             if self.use_batchnorm:
-                gamma = self.params['gamma'+str(i+1)]
-                beta = self.params['beta'+str(i+1)]
+                gamma = self.params[self.pn('gamma', i+1)]
+                beta = self.params[self.pn('beta', i+1)]
                 bn_params = self.bn_params[i]
-            x, cache = forward_fully_connected_norm_relu(x, w, b, gamma, beta, bn_params,
-                         self.use_batchnorm, self.use_dropout, self.dropout_param)
+                out, cache = forward_fc_norm_relu(X, w, b, gamma, beta, bn_params,
+                         self.use_batchnorm, self.use_dropout)
+            else:
+                out, cache = forward_fully_connected_transform_relu(X, w, b)
             caches.append(cache)
-        w = self.params['W'+str(self.num_layers)]
-        b = self.params['b' + str(self.num_layers)]
-        scores, cache = forward_fully_connected(x, w, b)
+            # using dropout
+            if self.use_dropout:
+                out, cache = forward_inverted_dropout(out, self.dropout_param)
+                caches.append(cache)
+
+        scores, cache = forward_fully_connected(out, self.params[self.pn('W', -1)],
+                                                self.params[self.pn('b', -1)])
         caches.append(cache)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
@@ -330,15 +338,17 @@ class FullyConnectedNeuralNet(object):
         # pour le gradient.                                                        #
         ############################################################################
         loss, gradient = softmax_loss(scores, y)
-        dx2, grads['W2'], grads['b2'] = backward_fully_connected(gradient, cache)
-        dx, grads['W1'], grads['b1'] = backward_fully_connected_transform_relu(dx2, caches[self.num_layers-1])
+        for i in len(self.num_layers - 1):
+            loss += 0.5 * self.reg * np.sum(np.square(self.params[self.pn('W', i+1)])
+                                            + np.square(self.params[self.pn('b', i+1)]))
+
+        if self.use_dropout:
+            out, dropout_cache = backward_inverted_dropout(out, dropout_param)
+        dx, grads['W1'], grads['b1'] = backward_fully_connected_transform_relu(dx2, caches[self.num_layers - 1])
 
         loss += 0.5 * self.reg * np.sum(np.square(self.params['W1']) + np.square(self.params['b1']) +
                                         np.square(self.params['W2']) + np.square(self.params['b2']))
-        grads['W2'] += self.reg * self.params['W2']
-        grads['b2'] += self.reg * self.params['b2']
-        grads['W1'] += self.reg * self.params['W1']
-        grads['b1'] += self.reg * self.params['b1']
+
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -348,12 +358,26 @@ class FullyConnectedNeuralNet(object):
     def pn(self, name, i):
         return name + str(i if i != -1 else self.num_layers)
 
-def forward_fully_connected_norm_relu(x, w, b, gamma, beta, bn_params,
-                         use_batchnorm=False, use_dropout=False, dropout_param=None):
+
+def backward_fc_norm_relu(dout, caches, batch_norm, dropout):
+    """Backward pass for the fully connected net with batch-norm and dropout"""
+    cache, bn_cache, relu_cache, dropout_cache = caches
+    # Dropout
+    if dropout:
+        dout = backward_inverted_dropout(dout, dropout_cache)
+    # ReLU
+    dout = backward_relu(dout, relu_cache)
+    # Batch norm
+    if batch_norm:
+        dout, dgamma, dbeta = backward_batch_normalization(dout, bn_cache)
+    dx, dw, db = backward_fully_connected(dout, cache)
+    return dx, dw, db, dgamma, dbeta
+
+
+def forward_fc_norm_relu(x, w, b, gamma, beta, bn_params,
+                         use_batchnorm=False):
+    """forward pass for the fully connected net with batch-norm and dropout"""
     out, cache = forward_fully_connected(x, w, b)
-    if use_batchnorm:
-        out, bn_cache = forward_batch_normalization(out, gamma, beta, bn_params)
+    out, bn_cache = forward_batch_normalization(out, gamma, beta, bn_params)
     out, relu_cache = forward_relu(out)
-    if use_dropout:
-       out, dropout_cache = forward_inverted_dropout(out, dropout_param)
-    return out, (cache, bn_cache, relu_cache, dropout_cache)
+    return out, (cache, bn_cache, relu_cache)
