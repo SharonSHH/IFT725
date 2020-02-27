@@ -338,9 +338,10 @@ class FullyConnectedNeuralNet(object):
         # pour le gradient.                                                        #
         ############################################################################
         loss, gradient = softmax_loss(scores, y)
-        for i in len(self.num_layers - 1):
+        for i in len(self.num_layers):
             loss += 0.5 * self.reg * np.sum(np.square(self.params[self.pn('W', i+1)])
-                                            + np.square(self.params[self.pn('b', i+1)]))
+                                            + np.square(self.params[m `  self.pn('b', i+1)]))
+        # last layerqg e3
 
         if self.use_dropout:
             out, dropout_cache = backward_inverted_dropout(out, dropout_param)
