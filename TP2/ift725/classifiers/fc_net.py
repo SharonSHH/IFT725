@@ -219,17 +219,19 @@ class FullyConnectedNeuralNet(object):
         ############################################################################
         layer_dim = [input_dim] + hidden_dims
         for layer in range(self.num_layers - 1):
-            param_name_W = self.pn('W', layer+1)
-            param_name_b = self.pn('b', layer+1)
+            param_name_W = self.pn('W', layer + 1)
+            param_name_b = self.pn('b', layer + 1)
             self.params[param_name_W] = weight_scale * np.random.randn(layer_dim[layer], layer_dim[layer + 1])
             self.params[param_name_b] = np.zeros(layer_dim[layer + 1])
             # using batch norm, store value to gamma and beta variables
             if self.use_batchnorm:
-                self.params[self.pn('gamma', layer+1)] = np.ones(layer_dim[layer+1])
-                self.params[self.pn('beta', layer+1)] = np.zeros(layer_dim[layer+1])
+                self.params[self.pn('gamma', layer + 1)] = np.ones((layer_dim[layer + 1],))
+                self.params[self.pn('beta', layer + 1)] = np.zeros((layer_dim[layer + 1],))
 
         self.params[self.pn('W', -1)] = weight_scale * np.random.randn(layer_dim[-1], num_classes)
         self.params[self.pn('b', -1)] = np.zeros(num_classes)
+
+
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -293,12 +295,12 @@ class FullyConnectedNeuralNet(object):
         caches = []
         out = X
         for i in range(self.num_layers - 1):
-            w = self.params[self.pn('W', i+1)]
-            b = self.params[self.pn('b', i+1)]
+            w = self.params[self.pn('W', i + 1)]
+            b = self.params[self.pn('b', i + 1)]
             # using batch normalization
             if self.use_batchnorm:
-                gamma = self.params[self.pn('gamma', i+1)]
-                beta = self.params[self.pn('beta', i+1)]
+                gamma = self.params[self.pn('gamma', i + 1)]
+                beta = self.params[self.pn('beta', i + 1)]
                 bn_params = self.bn_params[i]
                 out, cache = forward_fc_norm_relu(out, w, b, gamma, beta, bn_params)
             else:
@@ -312,6 +314,7 @@ class FullyConnectedNeuralNet(object):
         scores, cache = forward_fully_connected(out, self.params[self.pn('W', -1)],
                                                 self.params[self.pn('b', -1)])
         caches.append(cache)
+
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -338,8 +341,9 @@ class FullyConnectedNeuralNet(object):
         ############################################################################
         loss, dout = softmax_loss(scores, y)
         # last layer
-        mid_loss = np.sum(np.square(self.params[self.pn('W', -1)])
-                                            + np.square(self.params[self.pn('b', -1)]))
+        #sq_sum_w = np.sum(np.square(self.params[self.pn('W', -1)])
+                          #+ np.square(self.params[self.pn('b', -1)]))
+        sq_sum_w = np.sum(np.square(self.params[self.pn('W', -1)]))
         dout, grads[self.pn('W', -1)], grads[self.pn('b', -1)] = \
             backward_fully_connected(dout, caches[-1])
         grads[self.pn('W', -1)] += self.reg * self.params[self.pn('W', -1)]
@@ -350,17 +354,18 @@ class FullyConnectedNeuralNet(object):
             if self.use_dropout:
                 dout, dropout_cache = backward_inverted_dropout(dout, caches[i])
             if self.use_batchnorm:
-                dout, grads[self.pn('W', i+1)], grads[self.pn('b', i+1)], \
-                grads[self.pn('gamma', i + 1)], grads[self.pn('beta', i+1)] \
+                dout, grads[self.pn('W', i + 1)], grads[self.pn('b', i + 1)], \
+                grads[self.pn('gamma', i + 1)], grads[self.pn('beta', i + 1)] \
                     = backward_fc_norm_relu(dout, caches[i])
             else:
-                dout, grads[self.pn('W', i+1)], grads[self.pn('b', i+1)] = \
+                dout, grads[self.pn('W', i + 1)], grads[self.pn('b', i + 1)] = \
                     backward_fully_connected_transform_relu(dout, caches[i])
-            grads[self.pn('W', i+1)] += self.reg * self.params[self.pn('W', i+1)]
-            igrads[self.pn('b', i+1)] += self.reg * self.params[self.pn('b', i+1)]
-            mid_loss += np.sum(np.square(grads[self.pn('W', i+1)])
-                          + np.square(grads[self.pn('b', i+1)]))
-        loss += 0.5 * self.reg * mid_loss
+            grads[self.pn('W', i + 1)] += self.reg * self.params[self.pn('W', i + 1)]
+            grads[self.pn('b', i + 1)] += self.reg * self.params[self.pn('b', i + 1)]
+            #sq_sum_w += np.sum(np.square(grads[self.pn('W', i + 1)]) \
+                               #+ np.square(grads[self.pn('b', i + 1)]))
+            sq_sum_w += np.sum(np.square(self.params[self.pn('W', i+1)]))
+        loss += 0.5 * self.reg * sq_sum_w
 
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
