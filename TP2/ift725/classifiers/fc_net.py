@@ -228,7 +228,6 @@ class FullyConnectedNeuralNet(object):
                 self.params[self.pn('gamma', layer+1)] = np.ones(layer_dim[layer+1])
                 self.params[self.pn('beta', layer+1)] = np.zeros(layer_dim[layer+1])
 
-        # TODO: here is -1 or layer+1
         self.params[self.pn('W', -1)] = weight_scale * np.random.randn(layer_dim[-1], num_classes)
         self.params[self.pn('b', -1)] = np.zeros(num_classes)
         ############################################################################
@@ -292,6 +291,7 @@ class FullyConnectedNeuralNet(object):
         # la deuxième couche de normalisation par lots, etc.                       #
         ############################################################################
         caches = []
+        out = X
         for i in range(self.num_layers - 1):
             w = self.params[self.pn('W', i+1)]
             b = self.params[self.pn('b', i+1)]
@@ -300,10 +300,9 @@ class FullyConnectedNeuralNet(object):
                 gamma = self.params[self.pn('gamma', i+1)]
                 beta = self.params[self.pn('beta', i+1)]
                 bn_params = self.bn_params[i]
-                out, cache = forward_fc_norm_relu(X, w, b, gamma, beta, bn_params,
-                         self.use_batchnorm)
+                out, cache = forward_fc_norm_relu(out, w, b, gamma, beta, bn_params)
             else:
-                out, cache = forward_fully_connected_transform_relu(X, w, b)
+                out, cache = forward_fully_connected_transform_relu(out, w, b)
             caches.append(cache)
             # using dropout
             if self.use_dropout:
@@ -342,13 +341,11 @@ class FullyConnectedNeuralNet(object):
         mid_loss = np.sum(np.square(self.params[self.pn('W', -1)])
                                             + np.square(self.params[self.pn('b', -1)]))
         dout, grads[self.pn('W', -1)], grads[self.pn('b', -1)] = \
-            backward_fully_connected(dout, caches[i])
+            backward_fully_connected(dout, caches[-1])
         grads[self.pn('W', -1)] += self.reg * self.params[self.pn('W', -1)]
+        grads[self.pn('b', -1)] += self.reg * self.params[self.pn('b', -1)]
 
         # hidden layers
-        for i in range(len(self.num_layers) - 1):
-            loss += 0.5 * self.reg * np.sum(np.square(self.params[self.pn('W', i+1)])
-                                            + np.square(self.params[self.pn('b', i+1)]))
         for i in range(self.num_layers - 2, -1, -1):
             if self.use_dropout:
                 dout, dropout_cache = backward_inverted_dropout(dout, caches[i])
@@ -357,10 +354,10 @@ class FullyConnectedNeuralNet(object):
                 grads[self.pn('gamma', i + 1)], grads[self.pn('beta', i+1)] \
                     = backward_fc_norm_relu(dout, caches[i])
             else:
-                dx, grads[self.pn('W', i+1)], grads[self.pn('b', i+1)] = \
-                    backward_fully_connected_transform_relu(dout, caches[i+1])
-            grads[self.pn('W', i+1)] += self.params[self.pn('W', i+1)]
-            grads[self.pn('b', i+1)] += self.params[self.pn('b', i+1)]
+                dout, grads[self.pn('W', i+1)], grads[self.pn('b', i+1)] = \
+                    backward_fully_connected_transform_relu(dout, caches[i])
+            grads[self.pn('W', i+1)] += self.reg * self.params[self.pn('W', i+1)]
+            igrads[self.pn('b', i+1)] += self.reg * self.params[self.pn('b', i+1)]
             mid_loss += np.sum(np.square(grads[self.pn('W', i+1)])
                           + np.square(grads[self.pn('b', i+1)]))
         loss += 0.5 * self.reg * mid_loss
@@ -386,8 +383,7 @@ def backward_fc_norm_relu(dout, caches):
     return dx, dw, db, dgamma, dbeta
 
 
-def forward_fc_norm_relu(x, w, b, gamma, beta, bn_params,
-                         use_batchnorm=False):
+def forward_fc_norm_relu(x, w, b, gamma, beta, bn_params):
     """forward pass for the fully connected net with batch-norm and dropout"""
     out, cache = forward_fully_connected(x, w, b)
     out, bn_cache = forward_batch_normalization(out, gamma, beta, bn_params)
