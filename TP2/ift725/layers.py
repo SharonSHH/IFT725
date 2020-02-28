@@ -335,7 +335,9 @@ def forward_inverted_dropout(x, dropout_param):
         out = x * mask
     elif mode == 'test':
         cache = None
-
+        out = x
+    cache = (dropout_param, mask)
+    out = out.astype(x.dtype, copy=False)
     ###########################################################################
     #                            FIN DE VOTRE CODE                            #
     ###########################################################################
@@ -360,7 +362,6 @@ def backward_inverted_dropout(dout, cache):
     #  le dropout inversé (inverted dropout).                                 #
     ###########################################################################
     if mode == 'train':
-        dx = None
         dx = dout * mask
     elif mode == 'test':
         dx = dout
@@ -599,9 +600,11 @@ def softmax_loss(x, y, scale=1.0):
     #                                                                           #
     #############################################################################
     N = x.shape[0]
-    probs = np.exp(x - np.max(x, axis=1, keepdims=True))
-    probs /= np.sum(probs, axis=1, keepdims=True)
-    loss = -np.sum(np.log(probs[np.arange(N), y])) / N
+    aver_f = x - np.max(x, axis=1, keepdims=True)
+    denumerator = np.sum(np.exp(aver_f), axis=1, keepdims=True)
+    log_probs = aver_f - np.log(denumerator)
+    probs = np.exp(log_probs)
+    loss = -np.sum(log_probs[np.arange(N), y]) / N
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
     #############################################################################

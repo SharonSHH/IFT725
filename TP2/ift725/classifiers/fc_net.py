@@ -293,6 +293,7 @@ class FullyConnectedNeuralNet(object):
         # la deuxième couche de normalisation par lots, etc.                       #
         ############################################################################
         caches = []
+        dropout_cache = []
         out = X
         for i in range(self.num_layers - 1):
             w = self.params[self.pn('W', i + 1)]
@@ -309,7 +310,7 @@ class FullyConnectedNeuralNet(object):
             # using dropout
             if self.use_dropout:
                 out, cache = forward_inverted_dropout(out, self.dropout_param)
-                caches.append(cache)
+                dropout_cache.append(cache)
         # Calculate the results for the last layer
         scores, cache = forward_fully_connected(out, self.params[self.pn('W', -1)],
                                                 self.params[self.pn('b', -1)])
@@ -341,9 +342,7 @@ class FullyConnectedNeuralNet(object):
         ############################################################################
         loss, dout = softmax_loss(scores, y)
         # last layer
-        #sq_sum_w = np.sum(np.square(self.params[self.pn('W', -1)])
-                          #+ np.square(self.params[self.pn('b', -1)]))
-        sq_sum_w = np.sum(np.square(self.params[self.pn('W', -1)]))
+        sum_sq_w = np.sum(np.square(self.params[self.pn('W', -1)]))
         dout, grads[self.pn('W', -1)], grads[self.pn('b', -1)] = \
             backward_fully_connected(dout, caches[-1])
         grads[self.pn('W', -1)] += self.reg * self.params[self.pn('W', -1)]
@@ -352,7 +351,7 @@ class FullyConnectedNeuralNet(object):
         # hidden layers
         for i in range(self.num_layers - 2, -1, -1):
             if self.use_dropout:
-                dout, dropout_cache = backward_inverted_dropout(dout, caches[i])
+                dout = backward_inverted_dropout(dout, dropout_cache[i])
             if self.use_batchnorm:
                 dout, grads[self.pn('W', i + 1)], grads[self.pn('b', i + 1)], \
                 grads[self.pn('gamma', i + 1)], grads[self.pn('beta', i + 1)] \
@@ -364,8 +363,8 @@ class FullyConnectedNeuralNet(object):
             grads[self.pn('b', i + 1)] += self.reg * self.params[self.pn('b', i + 1)]
             #sq_sum_w += np.sum(np.square(grads[self.pn('W', i + 1)]) \
                                #+ np.square(grads[self.pn('b', i + 1)]))
-            sq_sum_w += np.sum(np.square(self.params[self.pn('W', i+1)]))
-        loss += 0.5 * self.reg * sq_sum_w
+            sum_sq_w += np.sum(np.square(self.params[self.pn('W', i+1)]))
+        loss += 0.5 * self.reg * sum_sq_w
 
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
