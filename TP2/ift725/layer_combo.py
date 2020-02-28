@@ -81,7 +81,10 @@ def forward_convolutional_relu_pool(x, w, b, conv_param, pool_param):
     # TODO: Implémentez une opération combo constituée d'un conv-relu-maxpool.  #
     #  Stockez le résultat dans out et cache.                                   #
     #############################################################################
-
+    out, conv_cache = conv_forward_fast(x, w, b, conv_param)
+    out, relu_cache = forward_relu(out)
+    out, pool_cache = max_pool_forward_fast(out, pool_param)
+    cache = (conv_cache, relu_cache, pool_cache)
     #############################################################################
     # Fin de votre code                                                         #
     #############################################################################
@@ -100,7 +103,10 @@ def backward_convolutional_relu_pool(dout, cache):
     # TODO: Implémentez la rétro-propagation d'un conv-relu-maxpool.            #
     #  Stockez le résultat dans dx, dw et db                                    #
     #############################################################################
-
+    (conv_cache, relu_cache, pool_cache) = cache
+    dout = max_pool_backward_fast(dout, pool_cache)
+    dout = backward_relu(dout, relu_cache)
+    dx, dw, db = conv_backward_fast(dout, conv_cache)
     #############################################################################
     # Fin de votre code                                                         #
     #############################################################################
