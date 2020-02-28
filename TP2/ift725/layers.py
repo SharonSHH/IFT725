@@ -401,7 +401,10 @@ def forward_convolutional_naive(x, w, b, conv_param, verbose=0):
     # TODO: Implémentez la propagation pour la couche de convolution.           #
     # Astuces: vous pouvez utiliser la fonction np.pad pour le remplissage.     #
     #############################################################################
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
 
+    
 
     #############################################################################
     #                             FIN DE VOTRE CODE                             #
