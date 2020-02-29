@@ -53,7 +53,14 @@ class ThreeLayerConvolutionalNet(object):
         # utilisez les clés 'W3' et 'b3' pour les poids et les biais de la couche  #
         # affine de sortie.                                                        #
         ############################################################################
-
+        (C, H, W) = input_dim
+        hidden_input = int(num_filters * H * W / 4)
+        self.params = {'W1': weight_scale * np.random.randn(num_filters, C, filter_size, filter_size),
+                       'b1': np.zeros(filter_size),
+                       'W2': weight_scale * np.random.randn(hidden_input, hidden_dim),
+                       'b2': np.zeros(hidden_dim),
+                       'W3': weight_scale * np.random.randn(hidden_dim, num_classes),
+                       'b3': np.zeros(num_classes)}
 
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
@@ -89,8 +96,9 @@ class ThreeLayerConvolutionalNet(object):
         #  couches, calculant les scores de classes pour X et stockez-les dans la  #
         #  variable scores.                                                        #
         ############################################################################
-
-
+        out1, pool_cache = forward_convolutional_relu_pool(X, W1, b1, conv_param, pool_param)
+        out, relu_cache = forward_fully_connected_transform_relu(out1, W2, b2)
+        scores, fc_cache = forward_fully_connected(out, W3, b3)
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
@@ -107,7 +115,15 @@ class ThreeLayerConvolutionalNet(object):
         # grads[k] contient les gradients pour self.params[k]. N'oubliez pas       #
         # d'ajouter la régularisation L2!                                          #
         ############################################################################
+        loss, dout = softmax_loss(scores, y)
+        loss += self.reg * (np.sum(np.square(W1)) + np.sum(np.square(W2) + np.sum(np.square(W3))))
+        dout, grads['W3'], grads['b3'] = backward_fully_connected(dout, fc_cache)
+        dout, grads['W2'], grads['b2'] = backward_fully_connected_transform_relu(dout, relu_cache)
+        dout, grads['W1'], grads['b1'] = backward_convolutional_relu_pool(dout, pool_cache)
 
+        grads['W3'] += 2 * self.reg * W3
+        grads['W2'] += 2 * self.reg * W2
+        grads['W1'] += 2 * self.reg * W1
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
         ############################################################################
