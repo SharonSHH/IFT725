@@ -115,4 +115,116 @@ class ThreeLayerConvolutionalNet(object):
         return loss, grads
 
 
-pass
+class MultiLayerConvNet(object):
+
+    def __init__(self, input_dim=(3, 32, 32), num_filters=32, filter_size=7,
+                 hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0,
+                 dtype=np.float32, N1=2, N2=3. M=2):
+        """
+        Initialize a new network.
+
+        Inputs:
+        - input_dim: Tuple (C, H, W) giving size of input data
+        - num_filters: Number of filters to use in the convolutional layer
+        - filter_size: Size of filters to use in the convolutional layer
+        - hidden_dim: Number of units to use in the fully-connected hidden layer
+        - num_classes: Number of scores to produce from the final affine layer.
+        - weight_scale: Scalar giving standard deviation for random initialization
+          of weights.
+        - reg: Scalar giving L2 regularization strength
+        - dtype: numpy datatype to use for computation.
+        - N1: number of conv+relu+bn layers.
+        - N2: number of pooling layers.
+        - M: number of FC+relu layers.
+        """
+        self.params = {}
+        self.reg = reg
+        self.dtype = dtype
+        self.N1 = N1
+        self.N2 = N2
+        self.M = M
+        self.HH = filter_size
+        self.params = {}
+        self.bn_params = [{'mode': 'train'} for i in range(self.N1)]
+
+
+        C, H, W = input_dim
+        HH = WW = filter_size
+        F = num_filters
+
+        for i in range(self.N1):
+            self.bn_params['gamma'+str(i+1)] = np.ones(dims[i+1])
+            self.bn_params['beta'+str(i+1)] = np.zeros(dims[i+1])
+
+        for i in range(self.N1):
+            self.params['W'+str(i+1)] = weight_scale * np.random.randn(F, C, HH, WW)
+            self.params['b'+str(i+1)] = np.zeros(F)
+        self.params['W'+str(self.N1+1)] = weight_scale * np.random.randn(F * H * W // (4**self.N2), hidden_dim)
+        self.params['b'+str(self.N1+1)] = np.zeros(hidden_dim)
+        for i in range(1, self.M-1):
+            self.params['W'+str(self.N1+1+i)] = weight_scale * np.random.randn(hidden_dim, hidden_dim)
+            self.params['b'+str(self.N1+1+i)] = np.zeros(hidden_dim)
+        self.params['W'+str(self.N1+self.M)] = weight_scale * np.random.randn(hidden_dim, num_classes)
+        self.params['b'+str(self.N1+self.M)] = np.zeros(num_classes)
+
+        for k, v in self.params.items():
+            self.params[k] = v.astype(dtype)
+
+
+    def loss(self, X, y=None):
+
+        filter_size = self.HH
+        conv_param = {'stride': 1, 'pad': (filter_size - 1) // 2}
+        bn_param = {}
+        pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
+
+        scores = None
+        h = X
+        h_cache_list = []
+        for i in range(self.N1):
+            index = str(i+1)
+            h, cache = forward_convolutional_relu_bn(h,
+                                            self.params['W'+index],
+                                            self.params['b'+index],
+                                            conv_param,
+                                            self.params['gamma'+index],
+                                            self.params['beta'+index],
+                                            self.bn_params[i])
+            h_cache_list.append(cache)
+        for i in range(self.N2):
+            h, cache = max_pool_forward_fast(h, pool_param)
+            h_cache_list.append(cache)
+        for i in range(self.M-1):
+            index = self.N1+1+i
+            h, cache = forward_fully_connected_transform_relu(h,
+                                                                self.params['W'+index],
+                                                                self.params['b'+index])
+            h_cache_list.append(cache)
+        scores, scores_cache = forward_fully_connected(h,
+                                self.params['W'+str(self.N1+self.M)],
+                                self.params['b'+str(self.N1+self.M)])
+
+
+        if y is None:
+            return scores
+
+        loss, grads = 0, {}
+
+        loss, dscores = softmax_loss(scores, y)
+
+        dh, grads['W'+str(self.N1+self.M)], grads['b'+str(self.N1+self.M)] = \
+            backward_fully_connected(dscores, scores_cache)
+
+        for i in reversed(range(self.M-1)):
+            index = self.N1+1+i
+            dh, grads['W'+index], grads['b'+index] = \
+                    backward_fully_connected_transform_relu(dh, h_cache_list.pop())
+        for i in range(self.N2):
+            dh = max_pool_backward_fast(dh, h_cache_list.pop())
+        for i in reversed(range(self.N1)):
+            index = str(i+1)
+            dh, grads['W'+index], grads['b'+index], \
+            grads['gamma'+index], grads['beta'+index] = \
+                backward_convolutional_relu_bn(dh, h_cache_list.pop())
+
+        return loss, grads
