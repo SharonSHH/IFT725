@@ -111,3 +111,18 @@ def backward_convolutional_relu_pool(dout, cache):
     # Fin de votre code                                                         #
     #############################################################################
     return dx, dw, db
+
+
+def forward_convolutional_relu_bn(x, w, b, gamma, beta, conv_param, bn_param):
+    a, conv_cache = conv_forward_fast(x, w, b, conv_param)
+    an, bn_cache = forward_spatial_batch_normalization(a, gamma, beta, bn_param)
+    out, relu_cache = forward_relu(an)
+    cache = (conv_cache, bn_cache, relu_cache)
+    return out, cache
+
+def backward_convolutional_relu_bn(dout, cache):
+    conv_cache, bn_cache, relu_cache = cache
+    dan = backward_relu(dout, relu_cache)
+    da, dgamma, dbeta = backward_spatial_batch_normalization(dan, bn_cache)
+    dx, dw, db = conv_backward_fast(da, conv_cache)
+    return dx, dw, db, dgamma, dbeta
