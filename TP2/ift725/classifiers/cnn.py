@@ -54,13 +54,17 @@ class ThreeLayerConvolutionalNet(object):
         # affine de sortie.                                                        #
         ############################################################################
         (C, H, W) = input_dim
+
         hidden_input = int(num_filters * H * W / 4)
-        self.params = {'W1': weight_scale * np.random.randn(num_filters, C, filter_size, filter_size),
-                       'b1': np.zeros(filter_size),
-                       'W2': weight_scale * np.random.randn(hidden_input, hidden_dim),
-                       'b2': np.zeros(hidden_dim),
-                       'W3': weight_scale * np.random.randn(hidden_dim, num_classes),
-                       'b3': np.zeros(num_classes)}
+
+        self.params = {
+            'W1': np.random.randn(num_filters, C, filter_size, filter_size) * weight_scale,
+            'W2': np.random.randn(hidden_input, hidden_dim) * weight_scale,
+            'W3': np.random.randn(hidden_dim, num_classes) * weight_scale,
+            'b1': np.zeros(num_filters),
+            'b2': np.zeros(hidden_dim),
+            'b3': np.zeros(num_classes)
+        }
 
         ############################################################################
         #                             FIN DE VOTRE CODE                            #
@@ -116,7 +120,7 @@ class ThreeLayerConvolutionalNet(object):
         # d'ajouter la régularisation L2!                                          #
         ############################################################################
         loss, dout = softmax_loss(scores, y)
-        loss += self.reg * (np.sum(np.square(W1)) + np.sum(np.square(W2) + np.sum(np.square(W3))))
+        loss += self.reg * (np.sum(np.square(W1)) + np.sum(np.square(W2)) + np.sum(np.square(W3)))
         dout, grads['W3'], grads['b3'] = backward_fully_connected(dout, fc_cache)
         dout, grads['W2'], grads['b2'] = backward_fully_connected_transform_relu(dout, relu_cache)
         dout, grads['W1'], grads['b1'] = backward_convolutional_relu_pool(dout, pool_cache)
