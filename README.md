@@ -1,2 +1,2 @@
 # IFT725
-Deep Learning
+Neural Networks
